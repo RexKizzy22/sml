@@ -29,6 +29,7 @@ fun get_substitutions1 (sl: string list list, str: string) =
 		NONE => get_substitutions1(xs, str) 
 		| SOME s => s @ get_substitutions1(xs, str) 
 
+(* Tail recursive version of get_substitutions1 *)
 fun get_substitutions2 (sl: string list list, str: string) =
    let
 	 fun append (xs: string list, ys: string list) =
@@ -47,6 +48,8 @@ fun get_substitutions2 (sl: string list list, str: string) =
      tail_substitute(sl, [])
    end
 
+(* Takes a list containing lists of substitute names and a name record with first, middle and last name fields
+   and returns a list containing records of similar names (substitutes of the original name record) *)
 fun similar_names (subs: string list list, full_name: {first: string, middle: string, last: string }) =
    let
      val { first, middle, last } = full_name
@@ -83,6 +86,9 @@ fun card_value (_, Ace) = 11
 	| card_value (_, Num num) = num
     | card_value _ = 10
 
+(* Takes a list of cards, a card to be removed from the list and an exception
+   then returns a list of cards without the unwanted card or raises an exception if 
+   the unwanted card is not found in the list *)
 fun remove_card (cs: card list, c: card, e: exn) = 
    case cs of
    [] => []
@@ -95,6 +101,7 @@ fun remove_card (cs: card list, c: card, e: exn) =
 		else x :: xs'
 	  end
 
+(* Takes a list of cards and returns true if they all have the same color else false *)
 fun all_same_color (cs: card list) =
 	case cs of
 	[] => true 
@@ -102,7 +109,7 @@ fun all_same_color (cs: card list) =
 	| head::(neck::xs) => 
 		card_color (head) = card_color (neck) andalso all_same_color (xs)
    
-
+(* Tail recursive sum of numbers associated with all cards in the list *)
 fun sum_cards (cs: card list) =
    let
      fun sum_cs(cs: card list, acc: int) =
@@ -113,6 +120,7 @@ fun sum_cards (cs: card list) =
      sum_cs(cs, 0)
    end
 
+(* determines the score of the card game at any point in time *)
 fun score (cs: card list, goal: int) =
 	let
 	  val sum = sum_cards (cs)
@@ -126,6 +134,7 @@ fun score (cs: card list, goal: int) =
 	  then prem_score div 2
 	  else prem_score
 	end
+
 
 fun officiate (card_list: card list, moves: move list, goal: int) =
 	let
