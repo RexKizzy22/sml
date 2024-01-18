@@ -80,8 +80,33 @@ fun all_answers f xs =
 			case zs of 
 			[] => acc 
 			| (SOME z)::zs' => helper zs' (z @ acc) 
+			| _ => acc
 	in
 	  	 if List.all (fn s => isSome s) ys
 		 then SOME (helper ys [])
 		 else NONE 
 	end 
+
+fun count_wildcards p = g (fn () => 1) (fn _ => 0) p
+
+fun count_wild_and_variable_lengths p = g (fn () => 1) (fn s => String.size s ) p
+
+fun count_some_var (t, p) = g (fn () => 0) (fn s => if s = t then 1 else 0) p
+
+fun check_pat p = 
+	let
+		fun helper1 p = 
+			case p of 
+			Variable v => [v] 
+			| TupleP ps => List.foldl (fn (v, acc) => (helper1 v) @ acc) [] ps
+			| ConstructorP (_, v) => helper1 v
+			| _ => []
+
+		fun helper2 ps = 
+			case ps of 
+			[] => true 
+			| x::[] => true
+			| x::xs' => List.exists (fn y => y = x) xs'
+	in
+	  helper2 (helper1 p)
+	end
