@@ -12,12 +12,9 @@ fun all_except_option (str: string, sl: string list) =
      | x::xs => 
 	 	if same_string(str, x) 
 		then SOME xs 
-		else let val xs' = all_except_option(str, xs)
-			 in 
-				case xs' of
+		else case all_except_option(str, xs) of
 				SOME e => SOME (x::e)
 				| NONE => NONE
-			 end
 
 (* Takes a list containing lists of substitute names and a name to be substituted and 
    returns a list of substitute names *)

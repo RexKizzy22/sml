@@ -35,43 +35,31 @@ datatype typ = Anything
 
 val only_capitals = List.filter (fn s => Char.isUpper (String.sub (s, 0)))
 
-val longest_string1 = 
-	fn (xs: string list) => 
-		List.foldl (fn (acc, s) => 
-						if String.size s >= String.size acc
-						then s 
-						else acc) "" xs
+fun longest_string1 (xs: string list) = 
+	List.foldl (fn (s, acc) => 
+		if String.size acc >= String.size s then acc else s) "" xs
 
-val longest_string2 = 
-	fn (xs: string list) => 
-		List.foldl (fn (acc, s) => 
-						if String.size s > String.size acc 
-						then s 
-						else acc) "" xs
+fun longest_string2 (xs: string list) = 
+	List.foldl (fn (s, acc) => 
+		if String.size acc > String.size s then acc else s) "" xs
 
-fun longest_string_helper f xs = List.foldl f  "" xs
+fun longest_string_helper (f: int * int -> bool) (xs: string list) = 
+	List.foldl (fn (s, acc) => 
+		if f ((String.size acc), (String.size s)) then acc else s) "" xs
 
-val longest_string3 = 
-	longest_string_helper (fn (acc, s) => 
-							if String.size s >= String.size acc 
-							then s 
-							else acc)  
-val longest_string4 = 
-	longest_string_helper (fn (acc, s) => 
-							if String.size s > String.size acc 
-							then s 
-							else acc)
+val longest_string3 = fn xs => longest_string_helper (fn (acc, s) => acc >= s) xs
+
+val longest_string4 = fn xs => longest_string_helper (fn (acc, s) => acc > s) xs
 
 val longest_capitalized = longest_string1 o only_capitals
 
 val rev_string = String.implode o List.rev o String.explode 
 
 fun first_answer f xs = 
-	let
-		val ys = List.find (fn s => isSome (f s)) xs
-	in
-		case ys of NONE => raise NoAnswer | SOME v => v 
-	end
+	case List.foldr (fn (s, acc) => 
+			case f s of SOME v => SOME v | NONE => acc ) NONE xs of 
+			SOME v => v 
+			| NONE => raise NoAnswer
 
 fun all_answers f xs =
 	let
@@ -79,7 +67,7 @@ fun all_answers f xs =
 		fun helper zs acc = 
 			case zs of 
 			[] => acc 
-			| (SOME z)::zs' => helper zs' (z @ acc) 
+			| (SOME z)::zs' => helper zs' (acc @ z) 
 			| _ => acc
 	in
 	  	 if List.all (fn s => isSome s) ys
@@ -95,18 +83,38 @@ fun count_some_var (t, p) = g (fn () => 0) (fn s => if s = t then 1 else 0) p
 
 fun check_pat p = 
 	let
-		fun helper1 p = 
+		fun fold_var_strings p = 
 			case p of 
 			Variable v => [v] 
-			| TupleP ps => List.foldl (fn (v, acc) => (helper1 v) @ acc) [] ps
-			| ConstructorP (_, v) => helper1 v
+			| TupleP ps => List.foldl (fn (v, acc) => (fold_var_strings v) @ acc) [] ps
+			| ConstructorP (_, v) => fold_var_strings v
 			| _ => []
 
-		fun helper2 ps = 
+		fun is_no_duplicates ps = 
 			case ps of 
 			[] => true 
 			| x::[] => true
-			| x::xs' => List.exists (fn y => y = x) xs'
+			| x::xs' => List.exists (fn y => y <> x) xs'
 	in
-	  helper2 (helper1 p)
+	  is_no_duplicates (fold_var_strings p)
 	end
+
+fun match (v, p) = 
+	case (v, p) of
+	(Const i, ConstP j) => if i = j then SOME [] else NONE
+	| (Unit, UnitP) => SOME []
+	| (Tuple vs, TupleP ps) => 
+		if List.length vs = List.length ps
+		then all_answers match (ListPair.zip (vs, ps))
+		else NONE
+	| (Constructor (s, v), ConstructorP (t, w)) =>
+		if s = t andalso isSome (match (v, w))
+		then SOME [] 
+		else NONE 
+	| (_, Wildcard) => SOME []
+	| (v, Variable s) => SOME [(s, v)]
+	| _ => NONE
+
+fun first_match v ps = 
+	(case first_answer (fn p => match (v, p)) ps of
+	p => SOME p) handle NoAnswer => NONE
