@@ -61,6 +61,12 @@ fun first_answer f xs =
 			SOME v => v 
 			| NONE => raise NoAnswer
 
+(* fun first_answer f xs =
+    case xs of
+        [] => raise NoAnswer
+      | x::xs' => case f x of NONE => first_answer f xs'
+			                      | SOME y => y *)
+
 fun all_answers f xs =
 	let
 		val ys = List.map f xs  
@@ -74,6 +80,15 @@ fun all_answers f xs =
 		 then SOME (helper ys [])
 		 else NONE 
 	end 
+
+(* fun all_answers f xs =
+    let fun loop (acc,xs) =
+        case xs of
+		        [] => SOME acc
+	        | x::xs' => case f x of 
+                          NONE => NONE
+              			    | SOME y => loop((y @ acc), xs')
+    in loop ([],xs) end *)
 
 fun count_wildcards p = g (fn () => 1) (fn _ => 0) p
 
